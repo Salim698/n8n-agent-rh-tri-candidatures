@@ -4,7 +4,18 @@ Ce workflow automatise le traitement des candidatures entrantes par email, avec 
 
 Veuillez consulter [CONTRIBUTING.md](CONTRIBUTING.md) pour les règles de contribution.
 
-![Aperçu du Workflow](images/workflow.png)
+## Aperçu visuel
+
+### 1. Le workflow n8n
+![Workflow n8n](images/workflow.png)
+
+### 2. Table Airtable : Candidatures
+![Table Candidats](images/candidature.png)
+
+### 3. Table Airtable : Description de poste
+![Table Description poste](images/Description.png)
+
+
 
 ## Fonctionnalités
 
