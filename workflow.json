@@ -1,0 +1,882 @@
+{
+  "name": "Agent RH - Tri automatique des candidatures",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1152,
+        -96
+      ],
+      "id": "b0074534-17e7-4dd4-9895-1820b34e4d51",
+      "name": "Gmail Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "delai_reponse_jours",
+              "value": "={{ $env.DELAI_REPONSE_JOURS }}",
+              "type": "number"
+            },
+            {
+              "id": "2",
+              "name": "nom_entreprise",
+              "value": "={{ $env.NOM_ENTREPRISE }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "email_rh",
+              "value": "={{ $env.EMAIL_RH }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -960,
+        -96
+      ],
+      "id": "config-node-id",
+      "name": "Config"
+    },
+    {
+      "parameters": {
+        "inputText": "=={{ [$json.subject, $json.snippet].filter(n => n).join(' ') }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Postule",
+              "description": "Le candidat postule a un poste dans organisation"
+            },
+            {
+              "category": "Ne postule pas",
+              "description": "ce candidat ne postule pas a un emploi"
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "Tu es un assistant RH. Classe le message suivant dans l'une de ces catégories : {categories}. \nRéponds UNIQUEMENT en JSON valide selon les instructions de formatage. Aucune explication."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        -768,
+        -96
+      ],
+      "id": "5f1c747e-c99d-41cc-b99c-b7ee9ea349ba",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        240
+      ],
+      "id": "c57145aa-4662-45a2-842a-89dcdc642969",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        464,
+        -448
+      ],
+      "id": "6b00e398-ff97-4f19-81ba-33297af82d71",
+      "name": "Share file"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "03dda60f-9879-46ac-976e-654aa39f3f84",
+              "name": "=PDF",
+              "value": "=={{ [{\"url\": $('Upload file').item.json.webContentLink}] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        704,
+        -448
+      ],
+      "id": "397afa00-5ff3-4c2b-8d24-d3f7b852906e",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_CANDIDATS_ID",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Score global": 0,
+            "Nom": "="
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Prénom",
+              "displayName": "Prénom",
+              "type": "string"
+            },
+            {
+              "id": "Nom",
+              "displayName": "Nom",
+              "type": "string"
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "type": "string"
+            },
+            {
+              "id": "Résumé",
+              "displayName": "Résumé",
+              "type": "string"
+            },
+            {
+              "id": "CV",
+              "displayName": "CV",
+              "type": "array"
+            },
+            {
+              "id": "Score global",
+              "displayName": "Score global",
+              "type": "number"
+            },
+            {
+              "id": "Score détail",
+              "displayName": "Score détail",
+              "type": "string"
+            },
+            {
+              "id": "Statut",
+              "displayName": "Statut",
+              "type": "options",
+              "options": [
+                {
+                  "name": "revue en cours",
+                  "value": "revue en cours"
+                },
+                {
+                  "name": "ok étape suivante",
+                  "value": "ok étape suivante"
+                }
+              ]
+            },
+            {
+              "id": "Description poste",
+              "displayName": "Description poste",
+              "type": "array"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        944,
+        -480
+      ],
+      "id": "563ed7c6-6dd2-4320-9716-3bc8dbd5f321",
+      "name": "Create a record"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "attachment_0",
+        "options": {
+          "keepSource": "json"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -80,
+        160
+      ],
+      "id": "5e4524db-406c-4dc3-b1bb-cfbcd64af664",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        400,
+        128
+      ],
+      "id": "dd99970a-254f-49a1-8dbd-f48de29a65a3",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_POSTES_ID",
+          "mode": "list"
+        },
+        "filterByFormula": "{Statut} = \"poste ouvert\"",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        96
+      ],
+      "id": "74ba470a-b0ae-4cd9-afe0-65bf040fc6b9",
+      "name": "Search records"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "inputDataFieldName": "attachment_0",
+        "driveId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_DRIVE_FOLDER_ID }}",
+          "mode": "id"
+        },
+        "options": {
+          "propertiesUi": {
+            "propertyValues": []
+          },
+          "keepRevisionForever": false,
+          "simplifyOutput": true
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        272,
+        -464
+      ],
+      "id": "dd181d30-9158-463c-9e64-bc142152fae3",
+      "name": "Upload file"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyse les informations de cette candidature et attribue une note de 0 à 10.\nLe poste ouvert est : {{ $json['Description poste'] }}\nVoici le CV extrait : {{$('Extract from File').item.json.text }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Tu es un assistant RH. Analyse le CV et détermine si le candidat convient au poste."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1328,
+        -48
+      ],
+      "id": "52a9179d-e50f-4211-8caa-452810202fe3",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_CANDIDATS_ID",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "=={{ $('Create a record').item.json.id }}",
+            "Prénom": "=={{ $json.output.prenom }}",
+            "Nom": "=={{ $json.output.nom }}",
+            "Email": "=={{ $json.output.email }}",
+            "Résumé": "={{ $json.resume_clean }}",
+            "Score global": "={{ $json.score_global_clean }}",
+            "Score détail": "={{ $json.score_detail_clean }}",
+            "Statut": "revue en cours",
+            "CV": "=={{ [{\"url\": $('Upload file').item.json.webViewLink}] }}",
+            "Description poste": "=={{ [$('Search records').item.json.id] }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1984,
+        0
+      ],
+      "id": "9294a577-3cf3-4145-a588-796b42821fbf",
+      "name": "Update record"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"prenom\": { \"type\": \"string\" },\n    \"nom\": { \"type\": \"string\" },\n    \"email\": { \"type\": \"string\" },\n    \"role_actuel\": { \"type\": \"string\" },\n    \"realisations\": { \"type\": \"string\" },\n    \"score_global\": { \"type\": \"number\" },\n    \"score_experience\": { \"type\": \"number\" },\n    \"score_competences\": { \"type\": \"number\" },\n    \"score_formation\": { \"type\": \"number\" },\n    \"raisonnement\": { \"type\": \"string\" }\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1584,
+        528
+      ],
+      "id": "7434f4ab-a9d2-43bb-b1a9-e6f53fb9a875",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        512
+      ],
+      "id": "de01b706-ee65-4fc9-a547-7eb6054cf58a",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -768,
+        256
+      ],
+      "id": "1a38a3f6-f16d-45ad-909d-57f1e8fd2299",
+      "name": "Google Gemini Chat Model1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1826d78a-856b-4c73-81f4-4172b35eeff4",
+              "leftValue": "={{ $json.attachments?.length ?? 0 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -448,
+        -464
+      ],
+      "id": "0b2d4312-e65e-4a69-bb58-057eeb194a1d",
+      "name": "A une pièce jointe ?"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_CANDIDATS_ID",
+          "mode": "id"
+        },
+        "filterByFormula": "={Email} = \"{{ $json.from.value[0].address }}\"",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -160,
+        -464
+      ],
+      "id": "4d016b7e-e499-48d6-9b0f-7c7b4fa0b4d8",
+      "name": "Vérifier doublon"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "951aec37-5f15-488d-aa37-5358696af7ef",
+              "leftValue": "={{ $json.id ?? '' }}",
+              "rightValue": "={{ $json.id ?? '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        48,
+        -480
+      ],
+      "id": "3a1735a2-a565-47bf-975b-482705774c36",
+      "name": "Déjà dans la base ?"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        272,
+        -688
+      ],
+      "id": "7b3eb221-c32b-456a-a641-9cc00bd6797f",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "sendTo": "={{ $('Gmail Trigger').item.json.from.value[0].address }}",
+        "subject": "Confirmation de réception de votre candidature",
+        "message": "=<p>Bonjour,</p><p>Nous avons bien reçu votre candidature. Notre équipe reviendra vers vous dans {{ $('Config').item.json.delai_reponse_jours }} jours.</p><p>Cordialement,<br>{{$('Config').item.json.nom_entreprise }}</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        -464
+      ],
+      "id": "d8ac9d89-1982-4b27-b14c-86ee03130aaf",
+      "name": "Accusé de réception"
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = $input.item.json.output;\n\nlet score = 0;\nconst raw = String(output.score_global || \"0\");\nconst match = raw.match(/[\\d]+([.,]\\d+)?/);\nif (match) score = parseFloat(match[0].replace(',', '.'));\nif (score > 10) score = 10;\nif (score < 0) score = 0;\n\nreturn {\n  ...output,\n  score_global_clean: score,\n  score_detail_clean: `Exp: ${output.score_experience}/10 | Comp: ${output.score_competences}/10 | Form: ${output.score_formation}/10`,\n  resume_clean: `${output.role_actuel} — ${output.realisations}`.substring(0, 500)\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        0
+      ],
+      "id": "72d37c76-ddd9-4f48-ac9d-044f8f63e311",
+      "name": "Parser score"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "52e6a89e-52a2-49d5-b3dd-0215cccbe132",
+              "leftValue": "={{ $('Parser score').item.json.score_global_clean }}",
+              "rightValue": "=7",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2256,
+        -32
+      ],
+      "id": "32dec459-6631-4975-ac12-fa43025f308d",
+      "name": "Score élevé ?"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Config').item.json.email_rh }}",
+        "subject": "=🌟 Candidat prioritaire — Score {{ $('Parser score').item.json.score_global_clean }}/10",
+        "message": "=<h3>Nouveau candidat</h3><p><b>Nom :</b> {{ $('Parser score').item.json.prenom }} {{ $('Parser score').item.json.nom }}<br><b>Email :</b> {{$('Parser score').item.json.email }}<br><b>Score :</b> {{ $('Parser score').item.json.score_global_clean }}/10<br><b>Détail :</b> {{ $('Parser score').item.json.score_detail_clean }}<br><b>CV :</b> <a href=\"{{ $('Upload file').item.json.webViewLink }}\">Ouvrir</a></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2528,
+        -64
+      ],
+      "id": "5c718389-7a4e-4551-a924-ea2b29956aa6",
+      "name": "Notification RH"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "A une pièce jointe ?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share file": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a record": {
+      "main": [
+        [
+          {
+            "node": "Accusé de réception",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        [
+          {
+            "node": "Share file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parser score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A une pièce jointe ?": {
+      "main": [
+        [
+          {
+            "node": "Vérifier doublon",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vérifier doublon": {
+      "main": [
+        [
+          {
+            "node": "Déjà dans la base ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Déjà dans la base ?": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Accusé de réception": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser score": {
+      "main": [
+        [
+          {
+            "node": "Update record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update record": {
+      "main": [
+        [
+          {
+            "node": "Score élevé ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score élevé ?": {
+      "main": [
+        [
+          {
+            "node": "Notification RH",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "id": "YOUR_WORKFLOW_ID",
+  "meta": {},
+  "tags": []
+}
